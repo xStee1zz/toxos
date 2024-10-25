@@ -4,6 +4,7 @@ import random
 
 import aiofiles
 import aiohttp
+from aiohttp.client_exceptions import ContentTypeError
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
