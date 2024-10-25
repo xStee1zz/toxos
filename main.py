@@ -36,7 +36,10 @@ async def spam(message: Message, state: FSMContext):
 
 async def POST(session, url, headers, data):
     async with session.post(url, headers=headers, json=data) as response:
-        return await response.json()
+        try:
+            return await response.json()
+        except ContentTypeError:
+            return None
 
 
 @dp.message(UserId.user_id)
@@ -71,11 +74,12 @@ async def spam_run(message: Message, state: FSMContext):
         responses = await asyncio.gather(*tasks)
 
         for response in responses:
-            if 'message' in response:
-                if response['message'] == "SUCCESS":
-                    success += 1
+            if response is None:
+                continue
+            if 'message' in response and response['message'] == "SUCCESS":
+                success += 1
 
-    await message.reply(f"Отправлено {success} заявок!\n\nВозможные проблемы:\n • Заявки заполнены\n • Заявки отключены")
+    await message.reply(f"Отправлено {success} заявок!\n\nВозможные проблемы:\n • Заявки заполнены\n • Заявки отключены\n • Неверный ID")
     await state.clear()
 
 
