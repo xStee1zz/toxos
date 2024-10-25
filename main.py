@@ -11,8 +11,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup 
 from aiogram.fsm.context import FSMContext 
  
-logging.basicConfig(level=logging.INFO)
-
+logging.basicConfig(level=logging.INFO) 
+ 
 class UserId(StatesGroup): 
     user_id = State() 
  
@@ -52,7 +52,7 @@ async def spam_run(message: Message, state: FSMContext) -> None:
     async with httpx.AsyncClient() as client: 
         tasks = [] 
  
-        for _ in range(100): 
+        for _ in range(50): 
             random_line = random.choice(lines).strip() 
             bot_id, bot_token = random_line.split(':') 
  
