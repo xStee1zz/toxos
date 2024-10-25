@@ -11,9 +11,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup 
 from aiogram.fsm.context import FSMContext 
  
-logging.basicConfig(level=logging.INFO) 
-
-limits = httpx.Limits(max_connections=None, max_keepalive_connections=None)
+logging.basicConfig(level=logging.INFO)
 
 class UserId(StatesGroup): 
     user_id = State() 
@@ -51,7 +49,7 @@ async def spam_run(message: Message, state: FSMContext) -> None:
  
     url = "https://gw.sandboxol.com/friend/api/v1/friends" 
      
-    async with httpx.AsyncClient(limits=limits) as client: 
+    async with httpx.AsyncClient() as client: 
         tasks = [] 
  
         for _ in range(100): 
