@@ -62,6 +62,7 @@ async def spam_run(message: Message, state: FSMContext):
             headers = {
                 "userId": bot_id,
                 "Access-Token": bot_token,
+                "Content-Type": "application/json",
                 "User-Agent": "okhttp/4.11.0"
             }
 
