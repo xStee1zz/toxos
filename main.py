@@ -36,8 +36,11 @@ async def spam(message: Message, state: FSMContext) -> None:
  
  
 async def send_post_request(session, url, headers, data): 
-    async with session.post(url, headers=headers, json=data) as response: 
-        return await response.json()  # aiohttp возвращает JSON через await
+    async with session.post(url, headers=headers, json=data) as response:
+        try:
+            return await response.json()
+        except aiohttp.ContentTypeError:
+            pass
  
  
 @dp.message(UserId.user_id) 
