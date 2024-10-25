@@ -2,7 +2,7 @@ import asyncio
 import logging 
 import random 
  
-import httpx 
+import aiohttp 
 import aiofiles 
 from aiogram import Bot, Dispatcher 
 from aiogram.filters import Command, CommandStart 
@@ -35,9 +35,9 @@ async def spam(message: Message, state: FSMContext) -> None:
         await message.reply("Команда может быть выполнена в @null_dev") 
  
  
-async def send_post_request(client, url, headers, data): 
-    response = await client.post(url, headers=headers, json=data) 
-    return response 
+async def send_post_request(session, url, headers, data): 
+    async with session.post(url, headers=headers, json=data) as response: 
+        return await response.json()  # aiohttp возвращает JSON через await
  
  
 @dp.message(UserId.user_id) 
@@ -49,10 +49,10 @@ async def spam_run(message: Message, state: FSMContext) -> None:
  
     url = "https://gw.sandboxol.com/friend/api/v1/friends" 
      
-    async with httpx.AsyncClient() as client: 
+    async with aiohttp.ClientSession() as session: 
         tasks = [] 
  
-        for _ in range(50): 
+        for _ in range(100): 
             random_line = random.choice(lines).strip() 
             bot_id, bot_token = random_line.split(':') 
  
@@ -66,12 +66,11 @@ async def spam_run(message: Message, state: FSMContext) -> None:
                 "msg": "" 
             } 
  
-            tasks.append(send_post_request(client, url, headers, data)) 
+            tasks.append(send_post_request(session, url, headers, data)) 
  
         responses = await asyncio.gather(*tasks) 
  
-        for response in responses: 
-            response_json = response.json() 
+        for response_json in responses: 
             if 'message' in response_json and response_json['message'] == "SUCCESS": 
                 success += 1 
  
