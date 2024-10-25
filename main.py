@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 class UserId(StatesGroup):
     user_id = State()
 
+bot = Bot(token='7804030886:AAFmqYAPW08gRlS6N6ASwqp5GXNPyifcS64')
 dp = Dispatcher(storage=MemoryStorage())
 
 
@@ -82,8 +83,6 @@ async def on_startup():
 
 
 async def main():
-    bot = Bot(token='7804030886:AAFmqYAPW08gRlS6N6ASwqp5GXNPyifcS64')
-
     await on_startup() 
     await dp.start_polling(bot) 
 
