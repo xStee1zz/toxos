@@ -6,6 +6,7 @@ import aiohttp
 import aiofiles
 from aiohttp.client_exceptions import ContentTypeError
 import nest_asyncio
+import g4f
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -35,8 +36,12 @@ async def POST(session, url, headers, data):
 
 
 async def spam(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if len(context.args) == 1 and re.match(r'^\d+$', context.args[0]):
-        number = context.args[0]
+    if update.effective_chat.id != -1002018886275:
+        return
+
+    match = re.match(r'^/spam\s+(\d+)$', update.message.text.strip())
+    if match:
+        number = match.group(1)
 
         async with aiofiles.open('bot.txt', mode='r') as file:
             bot = await file.readlines()
@@ -49,7 +54,6 @@ async def spam(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "friendId": number,
             "msg": ""
         }
-
         async with aiohttp.ClientSession() as session:
             tasks = []
 
@@ -83,12 +87,30 @@ async def spam(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             parse_mode="MarkdownV2"
         )
 
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.effective_chat.id != -1002018886275:
+        return
+
+    text = update.message.text.strip()
+
+    if text.strip().startswith('.'):
+        text = text[1:]
+        sent_message = await update.message.reply_text(f"*Выполняю запрос\\.\\.\\.*", parse_mode="MarkdownV2")
+
+        response = g4f.ChatCompletion.create(
+            model='gpt-4-turbo',
+            messages=[{"role": "user", "content": text}],
+        )
+
+        await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=sent_message.message_id, text=response)
+
 
 async def main() -> None:
     app = Application.builder().token("7804030886:AAFmqYAPW08gRlS6N6ASwqp5GXNPyifcS64").build()
 
     app.add_handler(MessageHandler(filters.COMMAND & filters.ChatType.PRIVATE, echo))
     app.add_handler(CommandHandler("spam", spam))
+    app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_text))
 
     await app.run_polling()
 
