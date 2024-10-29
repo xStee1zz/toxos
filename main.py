@@ -1,38 +1,29 @@
 import asyncio
-import logging
+import re
 import random
 
-import aiofiles
 import aiohttp
+import aiofiles
 from aiohttp.client_exceptions import ContentTypeError
-from aiogram import Bot, Dispatcher
-from aiogram.filters import Command, CommandStart
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Message
+import nest_asyncio
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters
+)
 
-logging.basicConfig(level=logging.INFO)
- 
-class UserId(StatesGroup):
-    user_id = State()
-
-bot = Bot(token='7804030886:AAFmqYAPW08gRlS6N6ASwqp5GXNPyifcS64')
-dp = Dispatcher(storage=MemoryStorage())
+nest_asyncio.apply()
 
 
-@dp.message(CommandStart())
-async def start(message: Message) -> None:
-    await message.answer("Функции доступны в @null_dev")
-
-
-@dp.message(Command("spam"))
-async def spam(message: Message, state: FSMContext):
-    if message.chat.id == -1002018886275:
-        await message.reply("Введите ID игрока")
-        await state.set_state(UserId.user_id)
-    else:
-        await message.reply("Команда может быть выполнена в @null_dev")
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="*Мой функционал исключительно для чатов @nullowns\\.\n\nДля того чтобы использовать мои функции, присоединись к нашему комьюнити в @null\\_dev\\.*",
+        parse_mode="MarkdownV2"
+    )
 
 
 async def POST(session, url, headers, data):
@@ -43,54 +34,63 @@ async def POST(session, url, headers, data):
             return None
 
 
-@dp.message(UserId.user_id)
-async def spam_run(message: Message, state: FSMContext):
-    async with aiofiles.open('bot.txt', mode='r') as file:
-        bot = await file.readlines()
+async def spam(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if len(context.args) == 1 and re.match(r'^\d+$', context.args[0]):
+        number = context.args[0]
 
-    success = 0
+        async with aiofiles.open('bot.txt', mode='r') as file:
+            bot = await file.readlines()
 
-    url = "https://gw.sandboxol.com/friend/api/v1/friends"
+        success = 0
 
-    data = {
-        "friendId": message.text,
-        "msg": ""
-    }
+        url = "https://gw.sandboxol.com/friend/api/v1/friends"
 
-    async with aiohttp.ClientSession() as session:
-        tasks = []
+        data = {
+            "friendId": number,
+            "msg": ""
+        }
 
-        for _ in range(100):
-            bot_id, bot_token = random.choice(bot).strip().split(':')
+        async with aiohttp.ClientSession() as session:
+            tasks = []
 
-            headers = {
-                "userId": bot_id,
-                "Access-Token": bot_token,
-                "Content-Type": "application/json",
-                "User-Agent": "okhttp/4.11.0"
-            }
+            for _ in range(100):
+                bot_id, bot_token = random.choice(bot).strip().split(':')
 
-            tasks.append(POST(session, url, headers, data))
+                headers = {
+                    "userId": bot_id,
+                    "Access-Token": bot_token,
+                    "Content-Type": "application/json",
+                    "User-Agent": "okhttp/4.11.0"
+                }
 
-        responses = await asyncio.gather(*tasks)
+                tasks.append(POST(session, url, headers, data))
 
-        for response in responses:
-            if response is None:
-                continue
-            if 'message' in response and response['message'] == "SUCCESS":
-                success += 1
+            responses = await asyncio.gather(*tasks)
 
-    await message.reply(f"Отправлено {success} заявок!\n\nВозможные проблемы:\n • Заявки заполнены\n • Заявки отключены\n • Неверный ID")
-    await state.clear()
+            for response in responses:
+                if response is None:
+                    continue
+                if 'message' in response and response['message'] == "SUCCESS":
+                    success += 1
+
+        await update.message.reply_text(
+            f"*Отправлено \\{success} заявок\\!\n\nВозможные проблемы:\n • Заявки заполнены\n • Заявки отключены\n • Неверный ID*",
+            parse_mode="MarkdownV2"
+        )
+    else:
+        await update.message.reply_text(
+            "*Неверный формат\\.\n\nВведите /spam ID*",
+            parse_mode="MarkdownV2"
+        )
 
 
-async def on_startup():
-    await bot.send_message(-1002018886275, "Уважаемые игроки!\n\nДоступен спам в друзья до 100 заявок - /spam") 
+async def main() -> None:
+    app = Application.builder().token("7804030886:AAFmqYAPW08gRlS6N6ASwqp5GXNPyifcS64").build()
 
+    app.add_handler(MessageHandler(filters.COMMAND & filters.ChatType.PRIVATE, echo))
+    app.add_handler(CommandHandler("spam", spam))
 
-async def main():
-    await on_startup() 
-    await dp.start_polling(bot) 
+    await app.run_polling()
 
 
 if __name__ == "__main__":
